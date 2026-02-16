@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0
+    container_name: somu-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: somu_enterprises
+      MYSQL_USER: somu_user
+      MYSQL_PASSWORD: somu_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - somu-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Spring Boot Application Service
+  app:
+    build: .
+    container_name: somu-app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/somu_enterprises
+      SPRING_DATASOURCE_USERNAME: somu_user
+      SPRING_DATASOURCE_PASSWORD: somu_password
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - somu-network
+
+volumes:
+  mysql_data:
+
+networks:
+  somu-network:
+    driver: bridge
+
